@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using NewsWebsite.Data;
+using NewsWebsite.Extensions;
 using NewsWebsite.Models;
-using Microsoft.AspNetCore.Authorization;
+using NewsWebsite.Models.ViewModels;
 
 namespace NewsWebsite.Controllers
 {
@@ -21,12 +23,55 @@ namespace NewsWebsite.Controllers
         }
 
         // GET: Articles
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? q = null, int? categoryId = null)
         {
-            var articles = await _context.Articles
+            var articlesQuery = _context.Articles
+                .AsNoTracking()
                 .Include(a => a.Categories)
+                .AsQueryable();
+
+            if (categoryId.HasValue)
+            {
+                articlesQuery = articlesQuery
+                    .Where(article => article.Categories.Any(category => category.Id == categoryId.Value));
+            }
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                articlesQuery = articlesQuery.Where(article =>
+                    article.Title.Contains(term) ||
+                    article.Content.Contains(term) ||
+                    (article.Author != null && article.Author.Contains(term)));
+            }
+
+            var articles = await articlesQuery
+                .OrderByDescending(article => article.PublishedAt)
+                .ThenByDescending(article => article.Id)
                 .ToListAsync();
-            return View(articles);
+
+            var categories = await _context.Categories
+                .AsNoTracking()
+                .OrderBy(category => category.Name)
+                .Select(category => new CategoryOptionViewModel
+                {
+                    Id = category.Id,
+                    Name = category.Name,
+                    ArticleCount = category.Articles.Count
+                })
+                .ToListAsync();
+
+            var model = new ArticlesIndexViewModel
+            {
+                Query = q?.Trim() ?? string.Empty,
+                SelectedCategoryId = categoryId,
+                Articles = articles
+                    .Select(article => article.ToSummaryViewModel(220))
+                    .ToList(),
+                Categories = categories
+            };
+
+            return View(model);
         }
 
         // GET: Articles/Details/5
@@ -38,6 +83,7 @@ namespace NewsWebsite.Controllers
             }
 
             var article = await _context.Articles
+                .AsNoTracking()
                 .Include(a => a.Categories)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (article == null)
@@ -45,7 +91,26 @@ namespace NewsWebsite.Controllers
                 return NotFound();
             }
 
-            return View(article);
+            var categoryIds = article.Categories
+                .Select(c => c.Id)
+                .ToList();
+
+            var relatedArticles = await _context.Articles
+                .AsNoTracking()
+                .Include(a => a.Categories)
+                .Where(a => a.Id != article.Id && a.Categories.Any(c => categoryIds.Contains(c.Id)))
+                .OrderByDescending(a => a.PublishedAt)
+                .ThenByDescending(a => a.Id)
+                .Take(3)
+                .ToListAsync();
+
+            var relatedViewModels = relatedArticles
+                .Select(a => a.ToSummaryViewModel(120))
+                .ToList();
+
+            var model = article.ToDetailViewModel(relatedViewModels);
+
+            return View(model);
         }
 
         // GET: Articles/Create

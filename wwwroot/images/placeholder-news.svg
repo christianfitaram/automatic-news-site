@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="Imagen genérica para noticias">
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#gradient)" />
+  <g fill="none" stroke="#ffffff" stroke-width="3" opacity="0.15">
+    <path d="M160,160 L1120,160 L1120,560 L160,560 Z" />
+    <path d="M260,220 L1020,220 L1020,500 L260,500 Z" />
+    <path d="M360,280 L920,280 L920,440 L360,440 Z" />
+  </g>
+  <text x="50%" y="50%" fill="#ffffff" font-size="72" font-family="Segoe UI, sans-serif" font-weight="700" text-anchor="middle" dominant-baseline="middle">
+    Noticias destacadas
+  </text>
+</svg>

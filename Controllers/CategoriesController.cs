@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using NewsWebsite.Data;
 using NewsWebsite.Models;
 using Microsoft.AspNetCore.Authorization;
+using NewsWebsite.Extensions;
+using NewsWebsite.Models.ViewModels;
 
 namespace NewsWebsite.Controllers
 {
@@ -35,13 +37,30 @@ namespace NewsWebsite.Controllers
             }
 
             var category = await _context.Categories
+                .AsNoTracking()
+                .Include(c => c.Articles)
+                    .ThenInclude(a => a.Categories)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (category == null)
             {
                 return NotFound();
             }
 
-            return View(category);
+            var articles = category.Articles
+                .OrderByDescending(article => article.PublishedAt)
+                .ThenByDescending(article => article.Id)
+                .Select(article => article.ToSummaryViewModel(160))
+                .ToList();
+
+            var model = new CategoryDetailViewModel
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Description = category.Description,
+                Articles = articles
+            };
+
+            return View(model);
         }
 
         // GET: Categories/Create

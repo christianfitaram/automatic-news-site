@@ -1,30 +1,70 @@
-@model NewsWebsite.Models.Category
-
+@model NewsWebsite.Models.ViewModels.CategoryDetailViewModel
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = $"Categoría: {Model.Name}";
+    string GetImageUrl(string imageUrl) => string.IsNullOrWhiteSpace(imageUrl)
+        ? Url.Content("~/images/placeholder-news.svg")
+        : imageUrl;
+    string FormatDate(System.DateTime dateTime) => dateTime.ToLocalTime().ToString("MMM d, yyyy");
 }
 
-<h1>Details</h1>
+<section class="container category-page">
+    <header class="mb-4">
+        <h1 class="section-title mb-2">@Model.Name</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p class="lead text-muted">@Model.Description</p>
+        }
+        <div class="d-flex align-items-center text-muted gap-3">
+            <span class="badge rounded-pill text-bg-light text-secondary">
+                @Model.Articles.Count artículos
+            </span>
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Index">
+                Volver a categorías
+            </a>
+        </div>
+    </header>
 
-<div>
-    <h4>Category</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+    @if (Model.Articles.Any())
+    {
+        <div class="row g-4">
+            @foreach (var article in Model.Articles)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="news-card h-100">
+                        <div class="news-card__image-wrapper">
+                            <img src="@GetImageUrl(article.ImageUrl)" alt="@article.Title" class="news-card__image" loading="lazy" />
+                            @if (article.IsPremium)
+                            {
+                                <span class="news-card__tag">Premium</span>
+                            }
+                        </div>
+                        <div class="news-card__body">
+                            <div class="news-card__categories mb-2">
+                                @foreach (var category in article.Categories)
+                                {
+                                    <span class="badge rounded-pill text-bg-light text-secondary">@category</span>
+                                }
+                            </div>
+                            <h2 class="news-card__title">
+                                <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id">
+                                    @article.Title
+                                </a>
+                            </h2>
+                            <p class="news-card__excerpt">@article.Excerpt</p>
+                        </div>
+                        <div class="news-card__footer">
+                            <span>@article.Author</span>
+                            <span>@FormatDate(article.PublishedAt)</span>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            Aún no hay artículos publicados en esta categoría.
+        </div>
+    }
+</section>

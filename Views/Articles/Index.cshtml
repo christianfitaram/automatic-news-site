@@ -1,84 +1,109 @@
-@model IEnumerable<NewsWebsite.Models.Article>
-
+@model NewsWebsite.Models.ViewModels.ArticlesIndexViewModel
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Noticias";
+    string GetImageUrl(string imageUrl) => string.IsNullOrWhiteSpace(imageUrl)
+        ? Url.Content("~/images/placeholder-news.svg")
+        : imageUrl;
+    string FormatDate(System.DateTime dateTime) => dateTime.ToLocalTime().ToString("MMM d, yyyy");
+    var hasFilters = !string.IsNullOrWhiteSpace(Model.Query) || Model.SelectedCategoryId.HasValue;
 }
 
-<h1>Index</h1>
+<section class="container articles-index">
+    <header class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between gap-3 mb-4">
+        <div>
+            <h1 class="section-title mb-2">Explora todas las noticias</h1>
+            <p class="text-muted mb-0">
+                Encuentra las últimas novedades de nuestras redacciones y filtra por tema o palabra clave.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary btn-sm" asp-controller="Articles" asp-action="Create">Publicar artículo</a>
+        </div>
+    </header>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Title)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Content)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Author)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.PublishedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Categories)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.RelevanceScore)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IsPremium)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ImageUrl)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Title)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Content)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Author)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.PublishedAt)
-            </td>
-            <td>
-                @if (item.Categories != null && item.Categories.Any())
+    <div class="articles-index__filters mb-4">
+        <form class="row g-2" asp-action="Index" method="get">
+            <div class="col-12 col-md-5">
+                <label class="form-label small text-uppercase text-muted" for="articles-search">Buscar</label>
+                <input id="articles-search"
+                       class="form-control"
+                       type="search"
+                       name="q"
+                       value="@Model.Query"
+                       placeholder="Ej. economía, tecnología, autor…" />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label small text-uppercase text-muted" for="articles-category">Categoría</label>
+                <select id="articles-category" class="form-select" name="categoryId">
+                    <option value="">Todas las categorías</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category.Id" selected="@(Model.SelectedCategoryId == category.Id)">
+                            @category.Name (@category.ArticleCount)
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">Aplicar filtros</button>
+                @if (hasFilters)
                 {
-                    @string.Join(", ", item.Categories.Select(c => c.Name))
+                    <a class="btn btn-outline-secondary" asp-action="Index">Limpiar</a>
                 }
-                else
-                {
-                    <span class="text-muted">None</span>
-                }
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.RelevanceScore)
-            </td>
-            <td>
-                @(item.IsPremium ? "Yes" : "No")
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ImageUrl)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+            </div>
+        </form>
+    </div>
+
+    @if (Model.Articles.Count == 0)
+    {
+        <div class="alert alert-info d-flex align-items-center" role="alert">
+            <span class="me-2" aria-hidden="true">📰</span>
+            No encontramos artículos que coincidan con tu búsqueda.
+        </div>
+    }
+    else
+    {
+        <p class="text-muted small mb-3">
+            Mostrando @Model.Articles.Count @((Model.Articles.Count == 1) ? "resultado" : "resultados")
+            @if (!string.IsNullOrWhiteSpace(Model.Query))
+            {
+                <span> para <strong>"@Model.Query"</strong></span>
+            }
+        </p>
+
+        <div class="row g-4">
+            @foreach (var article in Model.Articles)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="news-card h-100">
+                        <div class="news-card__image-wrapper">
+                            <img src="@GetImageUrl(article.ImageUrl)" alt="@article.Title" class="news-card__image" loading="lazy" />
+                            @if (article.IsPremium)
+                            {
+                                <span class="news-card__tag">Premium</span>
+                            }
+                        </div>
+                        <div class="news-card__body">
+                            <div class="news-card__categories mb-2">
+                                @foreach (var category in article.Categories)
+                                {
+                                    <span class="badge rounded-pill text-bg-light text-secondary">@category</span>
+                                }
+                            </div>
+                            <h2 class="news-card__title">
+                                <a asp-action="Details" asp-route-id="@article.Id">
+                                    @article.Title
+                                </a>
+                            </h2>
+                            <p class="news-card__excerpt">@article.Excerpt</p>
+                        </div>
+                        <div class="news-card__footer">
+                            <span>@article.Author</span>
+                            <span>@FormatDate(article.PublishedAt)</span>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+</section>

@@ -1,73 +1,104 @@
-@model NewsWebsite.Models.Article
-
+@model NewsWebsite.Models.ViewModels.ArticleDetailViewModel
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.Title;
+    string imageUrl = string.IsNullOrWhiteSpace(Model.ImageUrl)
+        ? Url.Content("~/images/placeholder-news.svg")
+        : Model.ImageUrl;
+    string FormatDate(System.DateTime dateTime) => dateTime.ToLocalTime().ToString("MMMM d, yyyy 'a las' HH:mm");
+    var paragraphs = Model.Content?
+        .Split(new[] { "\r\n\r\n", "\n\n" }, System.StringSplitOptions.RemoveEmptyEntries)
+        ?? System.Array.Empty<string>();
 }
 
-<h1>Details</h1>
+<article class="article-page container">
+    <header class="article-page__header mb-4">
+        <div class="article-page__meta mb-3">
+            @foreach (var category in Model.Categories)
+            {
+                <span class="badge text-bg-primary me-2">@category</span>
+            }
+            @if (Model.IsPremium)
+            {
+                <span class="badge text-bg-warning text-dark">Premium</span>
+            }
+        </div>
+        <h1 class="article-page__title">@Model.Title</h1>
+        <div class="article-page__byline text-muted">
+            <span class="me-3 fw-semibold text-dark">@Model.Author</span>
+            <span>@FormatDate(Model.PublishedAt)</span>
+        </div>
+    </header>
 
-<div>
-    <h4>Article</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Title)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Title)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Content)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Content)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Author)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Author)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.PublishedAt)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.PublishedAt)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Categories)
-        </dt>
-        <dd class = "col-sm-10">
-            @if (Model.Categories != null && Model.Categories.Any())
+    <figure class="article-page__figure mb-4">
+        <img class="article-page__image" src="@imageUrl" alt="@Model.Title" />
+        <figcaption class="article-page__figure-caption text-muted">
+            @FormatDate(Model.PublishedAt)
+        </figcaption>
+    </figure>
+
+    <section class="article-page__content mb-5">
+        @if (paragraphs.Length == 0)
+        {
+            <p class="lead">@Model.Content</p>
+        }
+        else
+        {
+            foreach (var paragraph in paragraphs)
             {
-                @string.Join(", ", Model.Categories.Select(c => c.Name))
+                <p>@paragraph</p>
             }
-            else
+        }
+    </section>
+
+    <footer class="article-page__footer d-flex flex-wrap justify-content-between align-items-center">
+        <div class="article-page__tags">
+            @foreach (var category in Model.Categories)
             {
-                <span class="text-muted">None</span>
+                <span class="badge rounded-pill text-bg-light text-secondary me-2">@category</span>
             }
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.RelevanceScore)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.RelevanceScore)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IsPremium)
-        </dt>
-        <dd class = "col-sm-10">
-            @(Model.IsPremium ? "Yes" : "No")
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ImageUrl)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ImageUrl)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+        </div>
+        <a class="btn btn-outline-primary" asp-controller="Articles" asp-action="Index">
+            Volver a noticias
+        </a>
+    </footer>
+</article>
+
+@if (Model.RelatedArticles.Any())
+{
+    <section class="container mt-5">
+        <h2 class="section-title mb-4">También te puede interesar</h2>
+        <div class="row g-4">
+            @foreach (var article in Model.RelatedArticles)
+            {
+                <div class="col-12 col-md-4">
+                    <article class="news-card h-100">
+                        <div class="news-card__image-wrapper">
+                            <img src="@(string.IsNullOrWhiteSpace(article.ImageUrl) ? Url.Content("~/images/placeholder-news.svg") : article.ImageUrl)"
+                                 alt="@article.Title"
+                                 class="news-card__image"
+                                 loading="lazy" />
+                        </div>
+                        <div class="news-card__body">
+                            <div class="news-card__categories mb-2">
+                                @foreach (var category in article.Categories)
+                                {
+                                    <span class="badge rounded-pill text-bg-light text-secondary">@category</span>
+                                }
+                            </div>
+                            <h3 class="news-card__title">
+                                <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id">
+                                    @article.Title
+                                </a>
+                            </h3>
+                            <p class="news-card__excerpt">@article.Excerpt</p>
+                        </div>
+                        <div class="news-card__footer">
+                            <span>@article.Author</span>
+                            <span>@article.PublishedAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    </section>
+}

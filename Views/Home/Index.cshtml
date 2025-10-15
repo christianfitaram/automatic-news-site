@@ -1,8 +1,137 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model NewsWebsite.Models.ViewModels.HomeIndexViewModel
+@{
+    ViewData["Title"] = "Últimas noticias";
+    string GetImageUrl(string imageUrl) => string.IsNullOrWhiteSpace(imageUrl)
+        ? Url.Content("~/images/placeholder-news.svg")
+        : imageUrl;
+    string FormatDate(System.DateTime dateTime) => dateTime.ToLocalTime().ToString("MMM d, yyyy");
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (Model.FeaturedArticle is not null)
+{
+    var hero = Model.FeaturedArticle;
+    <section class="home-hero mb-5">
+        <div class="home-hero__image" style="background-image:url('@GetImageUrl(hero.ImageUrl)');"></div>
+        <div class="home-hero__overlay"></div>
+        <div class="home-hero__content container">
+            <div class="home-hero__labels mb-3">
+                @foreach (var category in hero.Categories)
+                {
+                    <span class="badge text-bg-primary me-1">@category</span>
+                }
+                @if (hero.IsPremium)
+                {
+                    <span class="badge text-bg-warning text-dark">Premium</span>
+                }
+            </div>
+            <h1 class="home-hero__title mb-3">@hero.Title</h1>
+            <p class="home-hero__excerpt lead mb-4">@hero.Excerpt</p>
+            <div class="home-hero__meta mb-4">
+                <span class="me-3">@hero.Author</span>
+                <span>@FormatDate(hero.PublishedAt)</span>
+            </div>
+            <a class="btn btn-lg btn-light text-primary fw-semibold"
+               asp-controller="Articles"
+               asp-action="Details"
+               asp-route-id="@hero.Id">
+                Leer artículo completo
+            </a>
+        </div>
+    </section>
+}
+
+@if (Model.LatestArticles.Any())
+{
+    <section class="container mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="section-title mb-0">Lo más reciente</h2>
+            <a class="btn btn-outline-primary btn-sm" asp-controller="Articles" asp-action="Index">
+                Ver todas las noticias
+            </a>
+        </div>
+        <div class="row g-4 latest-grid">
+            @foreach (var article in Model.LatestArticles)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <article class="news-card h-100">
+                        <div class="news-card__image-wrapper">
+                            <img src="@GetImageUrl(article.ImageUrl)" alt="@article.Title" class="news-card__image" loading="lazy" />
+                            @if (article.IsPremium)
+                            {
+                                <span class="news-card__tag">Premium</span>
+                            }
+                        </div>
+                        <div class="news-card__body">
+                            <div class="news-card__categories mb-2">
+                                @foreach (var category in article.Categories)
+                                {
+                                    <span class="badge rounded-pill text-bg-light text-secondary">@category</span>
+                                }
+                            </div>
+                            <h3 class="news-card__title">
+                                <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id">
+                                    @article.Title
+                                </a>
+                            </h3>
+                            <p class="news-card__excerpt">@article.Excerpt</p>
+                        </div>
+                        <div class="news-card__footer">
+                            <span>@article.Author</span>
+                            <span>@FormatDate(article.PublishedAt)</span>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+@if (Model.CategorySections.Any())
+{
+    <section class="container mb-5">
+        @foreach (var categorySection in Model.CategorySections)
+        {
+            <div class="category-section mb-5">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h2 class="section-title mb-1">@categorySection.Name</h2>
+                        @if (!string.IsNullOrWhiteSpace(categorySection.Description))
+                        {
+                            <p class="text-muted mb-0">@categorySection.Description</p>
+                        }
+                    </div>
+                    <a class="btn btn-link fw-semibold text-decoration-none"
+                       asp-controller="Categories"
+                       asp-action="Details"
+                       asp-route-id="@categorySection.CategoryId">
+                        Ver categoría
+                    </a>
+                </div>
+                <div class="row g-4">
+                    @foreach (var article in categorySection.Articles)
+                    {
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <article class="news-card news-card--compact h-100">
+                                <div class="news-card__image-wrapper">
+                                    <img src="@GetImageUrl(article.ImageUrl)" alt="@article.Title" class="news-card__image" loading="lazy" />
+                                </div>
+                                <div class="news-card__body">
+                                    <h3 class="news-card__title">
+                                        <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id">
+                                            @article.Title
+                                        </a>
+                                    </h3>
+                                    <p class="news-card__excerpt">@article.Excerpt</p>
+                                </div>
+                                <div class="news-card__footer">
+                                    <span>@article.Author</span>
+                                    <span>@FormatDate(article.PublishedAt)</span>
+                                </div>
+                            </article>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </section>
+}
