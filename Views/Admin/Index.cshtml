@@ -1,0 +1,30 @@
+@model IEnumerable<NewsWebsite.Models.ViewModels.UserRolesViewModel>
+
+@{
+    ViewData["Title"] = "Administración de Usuarios";
+}
+
+<h2>Administración de Usuarios</h2>
+<a asp-action="Create" class="btn btn-success mb-3">➕ Crear Nuevo Usuario</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Roles</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var user in Model)
+    {
+        <tr>
+            <td>@user.Email</td>
+            <td>@string.Join(", ", user.Roles)</td>
+            <td>
+                <a asp-action="Edit" asp-route-userId="@user.UserId" class="btn btn-sm btn-primary">Editar Roles</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

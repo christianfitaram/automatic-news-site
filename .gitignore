@@ -1,0 +1,34 @@
+# Build output
+bin/
+obj/
+out/
+
+# Visual Studio / IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Packages & tooling
+packages/
+*.nupkg
+artifacts/
+node_modules/
+wwwroot/lib/
+
+# Logs & test output
+logs/
+*.log
+TestResults/
+coverage*/
+*.coverage*
+
+# Local config & secrets
+appsettings.*.local.json
+secrets.json
+*.pfx
+UserSecrets/
+
+# Databases / EF artifacts
+*.db
+*.db-*
