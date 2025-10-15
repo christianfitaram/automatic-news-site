@@ -99,7 +99,7 @@ namespace NewsWebsite.Controllers
                 Content = string.IsNullOrWhiteSpace(sanitizedText) ? payload.Text ?? string.Empty : sanitizedText,
                 Author = "Redaction Team",
                 PublishedAt = publishedAt,
-                ImageUrl = payload.Url,
+                ImageUrl = "https://www.boynemedicalpractice.ie/wp-content/uploads/2021/10/placeholder-news.jpg",
                 RelevanceScore = 1,
                 IsPremium = false,
                 CategoryNames = ExtractCategoryNames(payload.Topic)
