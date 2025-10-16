@@ -150,16 +150,23 @@ namespace NewsWebsite.Controllers
             {
                 model = "llama3.1:latest",
                 prompt = @"
-Clean and rewrite the following text according to these rules:
-1. Remove any reference to news outlets, authors, publication names, URLs, or website layout elements.
-2. Discard any malformed, incomplete, or irrelevant data.
-3. Rewrite the remaining content so that the wording similarity to the original is below 20%, but the meaning, tone, and factual information remain accurate.
-4. Return only the rewritten text — do not include explanations, introductions, or formatting.
+You are a professional text rewriter.
 
-Text:
+Your task:
+- Remove any reference to news outlets, authors, publication names, URLs, or web layout artifacts.
+- Discard malformed, incomplete, or irrelevant fragments.
+- Rewrite the remaining content entirely in new phrasing, ensuring:
+  • Less than 20% lexical similarity to the original text.
+  • The same factual meaning, tone, and logical flow are preserved.
+  • Natural and coherent English phrasing (avoid robotic or overly formal tone).
+- Do not include explanations, comments, or formatting — only return the rewritten text.
+
+Text to rewrite:
 " + originalText,
                 stream = false
             };
+
+
 
             try
             {
