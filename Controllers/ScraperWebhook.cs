@@ -149,8 +149,12 @@ namespace NewsWebsite.Controllers
             var request = new
             {
                 model = "llama3.1:latest",
-                prompt = @"Delete every reference to a news outlet and discard any malformed data or references to website layout.
-Return only the cleaned news content.
+                prompt = @"
+Clean and rewrite the following text according to these rules:
+1. Remove any reference to news outlets, authors, publication names, URLs, or website layout elements.
+2. Discard any malformed, incomplete, or irrelevant data.
+3. Rewrite the remaining content so that the wording similarity to the original is below 20%, but the meaning, tone, and factual information remain accurate.
+4. Return only the rewritten text — do not include explanations, introductions, or formatting.
 
 Text:
 " + originalText,
