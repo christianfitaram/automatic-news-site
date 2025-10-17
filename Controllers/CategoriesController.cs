@@ -35,12 +35,12 @@ namespace NewsWebsite.Controllers
             {
                 return NotFound();
             }
-
             var category = await _context.Categories
-                .AsNoTracking()
+                .AsNoTrackingWithIdentityResolution()
                 .Include(c => c.Articles)
                     .ThenInclude(a => a.Categories)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (category == null)
             {
                 return NotFound();
