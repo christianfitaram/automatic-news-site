@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NewsWebsite.Data;
+using NewsWebsite.Options;
 using NewsWebsite.Services.Articles;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,7 @@ builder.Services.AddHttpClient("TextSanitizerApi", client =>
     client.Timeout = TimeSpan.FromMinutes(4);
 });
 builder.Services.AddScoped<IArticlesService, ArticlesService>();
+builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
 // Activar Identity con EF Core
 // Identity con Roles
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>

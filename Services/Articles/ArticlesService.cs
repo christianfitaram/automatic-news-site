@@ -117,6 +117,12 @@ namespace NewsWebsite.Services.Articles
 
         private Task SendToExternalAsync(Article article, CancellationToken cancellationToken)
         {
+            if (_httpClient.BaseAddress == null)
+            {
+                _logger.LogWarning("ExternalNewsApi BaseAddress is not configured. Skipping notification for article {ArticleId}", article.Id);
+                return Task.CompletedTask;
+            }
+
             var payload = new
             {
                 article.Id,

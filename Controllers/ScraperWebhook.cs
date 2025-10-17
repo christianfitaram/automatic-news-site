@@ -9,8 +9,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NewsWebsite.Services.Articles;
 using System.Linq;
+using NewsWebsite.Options;
 
 namespace NewsWebsite.Controllers
 {
@@ -18,20 +20,21 @@ namespace NewsWebsite.Controllers
     [Route("api/scraper/[controller]")]
     public class WebhookController : ControllerBase
     {
-        private const string WebhookSecret = "eyJAdminK3y-2025!zXt9fGHEMPLq4RsVm7DwuJXeb6u";
-
         private readonly IArticlesService _articlesService;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<WebhookController> _logger;
+        private readonly string _webhookSecret;
 
         public WebhookController(
             IArticlesService articlesService,
             IHttpClientFactory httpClientFactory,
-            ILogger<WebhookController> logger)
+            ILogger<WebhookController> logger,
+            IOptions<WebhookOptions> webhookOptions)
         {
             _articlesService = articlesService ?? throw new ArgumentNullException(nameof(articlesService));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _webhookSecret = webhookOptions?.Value?.ScraperSecret ?? string.Empty;
         }
 
         [HttpPost]
@@ -39,7 +42,13 @@ namespace NewsWebsite.Controllers
             [FromHeader(Name = "X-Signature")] string? signature,
             CancellationToken cancellationToken)
         {
-            if (!string.Equals(signature, WebhookSecret, StringComparison.Ordinal))
+            if (string.IsNullOrWhiteSpace(_webhookSecret))
+            {
+                _logger.LogError("Webhook secret is not configured. Rejecting request.");
+                return StatusCode(500, "Webhook secret not configured.");
+            }
+
+            if (!string.Equals(signature, _webhookSecret, StringComparison.Ordinal))
             {
                 _logger.LogWarning("Invalid webhook signature received: {Signature}", signature);
                 return Unauthorized("Firma inválida");

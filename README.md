@@ -58,7 +58,18 @@ Archivo `appsettings.json`:
 }
 ```
 
-> **Producción**: no mantengas credenciales ni secretos en archivos committeados. Usa variables de entorno (`ConnectionStrings__DefaultConnection`, `ExternalNewsApi__BaseUrl`, `WebhookSecret`, etc.) o `appsettings.Production.json` fuera del control de código.
+> **Producción**: no mantengas credenciales ni secretos en archivos committeados. Usa variables de entorno (`ConnectionStrings__DefaultConnection`, `ExternalNewsApi__BaseUrl`, `TextSanitizerApi__BaseUrl`, `Webhooks__ScraperSecret`, etc.) o un `appsettings.Production.json` fuera del control de código fuente.
+
+Ejemplo de `/etc/newswebsite.env` usado por `systemd`:
+
+```
+ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_URLS=http://0.0.0.0:5000
+ConnectionStrings__DefaultConnection=Server=127.0.0.1,1433;Database=NewsDB;User Id=news_app;Password=***;TrustServerCertificate=True;Encrypt=False;
+ExternalNewsApi__BaseUrl=https://api.tu-integracion.com
+TextSanitizerApi__BaseUrl=http://34.65.174.164:11434
+Webhooks__ScraperSecret=pon-aqui-tu-secreto
+```
 
 ## Puesta en marcha local
 
