@@ -68,9 +68,10 @@ namespace NewsWebsite.Controllers
                 return BadRequest("Payload vacío o inválido.");
             }
 
-            var sanitizedText = await SanitizeArticleTextAsync(payload.Text ?? string.Empty, CancellationToken.None);
+            var sanitizedTitle = await SanitizeTextAsync(payload.Title ?? string.Empty, isTitle: true, CancellationToken.None);
+            var sanitizedText = await SanitizeTextAsync(payload.Text ?? string.Empty, isTitle: false, CancellationToken.None);
 
-            var articleRequest = BuildCreateArticleRequest(payload, sanitizedText);
+            var articleRequest = BuildCreateArticleRequest(payload, sanitizedTitle, sanitizedText);
 
             try
             {
@@ -84,7 +85,7 @@ namespace NewsWebsite.Controllers
             }
         }
 
-        private CreateArticleRequest BuildCreateArticleRequest(ScrapedArticlePayload payload, string sanitizedText)
+        private CreateArticleRequest BuildCreateArticleRequest(ScrapedArticlePayload payload, string sanitizedTitle, string sanitizedText)
         {
             DateTime? publishedAt = null;
             if (!string.IsNullOrWhiteSpace(payload.ScrapedAt) &&
@@ -93,9 +94,13 @@ namespace NewsWebsite.Controllers
                 publishedAt = parsed.ToUniversalTime();
             }
 
+            var effectiveTitle = !string.IsNullOrWhiteSpace(sanitizedTitle)
+                ? sanitizedTitle
+                : string.IsNullOrWhiteSpace(payload.Title) ? "Contenido sin título" : payload.Title!;
+
             return new CreateArticleRequest
             {
-                Title = payload.Title ?? "Contenido sin título",
+                Title = effectiveTitle,
                 Content = string.IsNullOrWhiteSpace(sanitizedText) ? payload.Text ?? string.Empty : sanitizedText,
                 Author = "Redaction Team",
                 PublishedAt = publishedAt,
@@ -137,7 +142,7 @@ namespace NewsWebsite.Controllers
             return new[] { CultureInfo.CurrentCulture.TextInfo.ToTitleCase(normalized.ToLowerInvariant()) };
         }
 
-        private async Task<string> SanitizeArticleTextAsync(string originalText, CancellationToken cancellationToken)
+        private async Task<string> SanitizeTextAsync(string originalText, bool isTitle, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(originalText))
             {
@@ -146,10 +151,22 @@ namespace NewsWebsite.Controllers
 
             var client = _httpClientFactory.CreateClient("TextSanitizerApi");
 
-            var request = new
-            {
-                model = "llama3.1:latest",
-                prompt = @"
+            var prompt = isTitle
+                ? @"
+You are a professional headline rewriter.
+
+Your task:
+- Remove any reference to news outlets, authors, publication names, URLs, or web layout artifacts.
+- Discard malformed, incomplete, or irrelevant fragments.
+- Rewrite the headline entirely in new phrasing, ensuring:
+  • Less than 20% lexical similarity to the original headline.
+  • The same factual meaning, tone, and emphasis are preserved.
+  • Natural, concise English phrasing (maximum 20 words; avoid robotic tone).
+- Do not include explanations, comments, or formatting — only return the rewritten headline.
+
+Headline to rewrite:
+" + originalText
+                : @"
 You are a professional text rewriter.
 
 Your task:
@@ -162,11 +179,14 @@ Your task:
 - Do not include explanations, comments, or formatting — only return the rewritten text.
 
 Text to rewrite:
-" + originalText,
+" + originalText;
+
+            var request = new
+            {
+                model = "llama3.1:latest",
+                prompt = prompt,
                 stream = false
             };
-
-
 
             try
             {
